@@ -20,7 +20,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.google.android.fhir.dataStore
 import com.google.fhir.examples.demo.R
 import com.google.gson.Gson
 import java.io.IOException

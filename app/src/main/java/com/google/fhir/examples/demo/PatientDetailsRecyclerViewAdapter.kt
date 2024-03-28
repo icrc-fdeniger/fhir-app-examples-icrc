@@ -38,24 +38,24 @@ class PatientDetailsRecyclerViewAdapter(private val onScreenerClick: () -> Unit)
     return when (ViewTypes.from(viewType)) {
       ViewTypes.HEADER ->
         PatientDetailsHeaderItemViewHolder(
-          PatientDetailsCardViewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+          PatientDetailsCardViewBinding.inflate(LayoutInflater.from(parent.context), parent, false),
         )
       ViewTypes.PATIENT ->
         PatientOverviewItemViewHolder(
           PatientDetailsHeaderBinding.inflate(LayoutInflater.from(parent.context), parent, false),
-          onScreenerClick
+          onScreenerClick,
         )
       ViewTypes.PATIENT_PROPERTY ->
         PatientPropertyItemViewHolder(
-          PatientListItemViewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+          PatientListItemViewBinding.inflate(LayoutInflater.from(parent.context), parent, false),
         )
       ViewTypes.OBSERVATION ->
         PatientDetailsObservationItemViewHolder(
-          PatientListItemViewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+          PatientListItemViewBinding.inflate(LayoutInflater.from(parent.context), parent, false),
         )
       ViewTypes.CONDITION ->
         PatientDetailsConditionItemViewHolder(
-          PatientListItemViewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+          PatientListItemViewBinding.inflate(LayoutInflater.from(parent.context), parent, false),
         )
     }
   }
@@ -94,40 +94,42 @@ class PatientDetailsRecyclerViewAdapter(private val onScreenerClick: () -> Unit)
   companion object {
     private const val STROKE_WIDTH = 2f
     private const val CORNER_RADIUS = 10f
+
     @ColorInt private const val FILL_COLOR = Color.TRANSPARENT
+
     @ColorInt private const val STROKE_COLOR = Color.GRAY
 
     fun allCornersRounded(): MaterialShapeDrawable {
       return MaterialShapeDrawable(
-          ShapeAppearanceModel.builder()
-            .setAllCornerSizes(CORNER_RADIUS)
-            .setAllCorners(RoundedCornerTreatment())
-            .build()
-        )
+        ShapeAppearanceModel.builder()
+          .setAllCornerSizes(CORNER_RADIUS)
+          .setAllCorners(RoundedCornerTreatment())
+          .build(),
+      )
         .applyStrokeColor()
     }
 
     fun topCornersRounded(): MaterialShapeDrawable {
       return MaterialShapeDrawable(
-          ShapeAppearanceModel.builder()
-            .setTopLeftCornerSize(CORNER_RADIUS)
-            .setTopRightCornerSize(CORNER_RADIUS)
-            .setTopLeftCorner(RoundedCornerTreatment())
-            .setTopRightCorner(RoundedCornerTreatment())
-            .build()
-        )
+        ShapeAppearanceModel.builder()
+          .setTopLeftCornerSize(CORNER_RADIUS)
+          .setTopRightCornerSize(CORNER_RADIUS)
+          .setTopLeftCorner(RoundedCornerTreatment())
+          .setTopRightCorner(RoundedCornerTreatment())
+          .build(),
+      )
         .applyStrokeColor()
     }
 
     fun bottomCornersRounded(): MaterialShapeDrawable {
       return MaterialShapeDrawable(
-          ShapeAppearanceModel.builder()
-            .setBottomLeftCornerSize(CORNER_RADIUS)
-            .setBottomRightCornerSize(CORNER_RADIUS)
-            .setBottomLeftCorner(RoundedCornerTreatment())
-            .setBottomRightCorner(RoundedCornerTreatment())
-            .build()
-        )
+        ShapeAppearanceModel.builder()
+          .setBottomLeftCornerSize(CORNER_RADIUS)
+          .setBottomRightCornerSize(CORNER_RADIUS)
+          .setBottomLeftCorner(RoundedCornerTreatment())
+          .setBottomRightCorner(RoundedCornerTreatment())
+          .build(),
+      )
         .applyStrokeColor()
     }
 
@@ -150,7 +152,7 @@ abstract class PatientDetailItemViewHolder(v: View) : RecyclerView.ViewHolder(v)
 
 class PatientOverviewItemViewHolder(
   private val binding: PatientDetailsHeaderBinding,
-  val onScreenerClick: () -> Unit
+  val onScreenerClick: () -> Unit,
 ) : PatientDetailItemViewHolder(binding.root) {
   override fun bind(data: PatientDetailData) {
     binding.screener.setOnClickListener { onScreenerClick() }

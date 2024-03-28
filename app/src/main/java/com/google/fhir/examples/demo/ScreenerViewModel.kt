@@ -24,8 +24,7 @@ import ca.uhn.fhir.context.FhirContext
 import ca.uhn.fhir.context.FhirVersionEnum
 import com.google.android.fhir.FhirEngine
 import com.google.android.fhir.datacapture.mapping.ResourceMapper
-import java.math.BigDecimal
-import java.util.UUID
+import com.google.fhir.examples.demo.extensions.readFileFromAssets
 import kotlinx.coroutines.launch
 import org.hl7.fhir.r4.model.Bundle
 import org.hl7.fhir.r4.model.CodeableConcept
@@ -40,18 +39,22 @@ import org.hl7.fhir.r4.model.Reference
 import org.hl7.fhir.r4.model.Resource
 import org.hl7.fhir.r4.model.RiskAssessment
 import org.hl7.fhir.r4.model.codesystems.RiskProbability
+import java.math.BigDecimal
+import java.util.*
 
 /** ViewModel for screener questionnaire screen {@link ScreenerEncounterFragment}. */
 class ScreenerViewModel(application: Application, private val state: SavedStateHandle) :
   AndroidViewModel(application) {
   val questionnaire: String
     get() = getQuestionnaireJson()
+
   val isResourcesSaved = MutableLiveData<Boolean>()
 
   private val questionnaireResource: Questionnaire
     get() =
       FhirContext.forCached(FhirVersionEnum.R4).newJsonParser().parseResource(questionnaire)
         as Questionnaire
+
   private var questionnaireJson: String? = null
   private var fhirEngine: FhirEngine = FhirApplication.fhirEngine(application.applicationContext)
 
@@ -78,7 +81,7 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
   private suspend fun saveResources(
     bundle: Bundle,
     subjectReference: Reference,
-    encounterId: String
+    encounterId: String,
   ) {
     val encounterReference = Reference("Encounter/$encounterId")
     bundle.entry.forEach {
@@ -110,14 +113,13 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
 
   private fun isRequiredFieldMissing(bundle: Bundle): Boolean {
     bundle.entry.forEach {
-      val resource = it.resource
-      when (resource) {
+      when (val resource = it.resource) {
         is Observation -> {
           if (resource.hasValueQuantity() && !resource.valueQuantity.hasValueElement()) {
             return true
           }
         }
-      // TODO check other resources inputs
+        // TODO check other resources inputs
       }
     }
     return false
@@ -129,16 +131,12 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
 
   private fun getQuestionnaireJson(): String {
     questionnaireJson?.let {
-      return it!!
+      return it
     }
-    questionnaireJson = readFileFromAssets(state[ScreenerFragment.QUESTIONNAIRE_FILE_PATH_KEY]!!)
+    questionnaireJson =
+      getApplication<Application>()
+        .readFileFromAssets(state[ScreenerFragment.QUESTIONNAIRE_FILE_PATH_KEY]!!)
     return questionnaireJson!!
-  }
-
-  private fun readFileFromAssets(filename: String): String {
-    return getApplication<Application>().assets.open(filename).bufferedReader().use {
-      it.readText()
-    }
   }
 
   private fun generateUuid(): String {
@@ -148,7 +146,7 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
   private suspend fun generateRiskAssessmentResource(
     bundle: Bundle,
     subjectReference: Reference,
-    encounterId: String
+    encounterId: String,
   ) {
     val spO2 = getSpO2(bundle)
     spO2?.let {
@@ -175,7 +173,7 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
   private fun getRiskProbability(
     isSymptomPresent: Boolean,
     isComorbidityPresent: Boolean,
-    spO2: BigDecimal
+    spO2: BigDecimal,
   ): RiskProbability? {
     if (spO2 < BigDecimal(90)) {
       return RiskProbability.HIGH
@@ -214,8 +212,7 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
         .filter { it.hasCode() && it.code.hasCoding() }
         .flatMap { it.code.coding }
         .map { it.code }
-        .filter { isSymptomPresent(it) }
-        .count()
+        .count { isSymptomPresent(it) }
     return count > 0
   }
 
@@ -231,8 +228,7 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
         .filter { it.hasCode() && it.code.hasCoding() }
         .flatMap { it.code.coding }
         .map { it.code }
-        .filter { isComorbidityPresent(it) }
-        .count()
+        .count { isComorbidityPresent(it) }
     return count > 0
   }
 
@@ -264,7 +260,7 @@ class ScreenerViewModel(application: Application, private val state: SavedStateH
         DIABETES,
         HYPER_TENSION,
         HEART_DISEASE,
-        HIGH_BLOOD_LIPIDS
+        HIGH_BLOOD_LIPIDS,
       )
     private val symptoms: Set<String> = setOf(FEVER, SHORTNESS_BREATH, COUGH, LOSS_OF_SMELL)
   }

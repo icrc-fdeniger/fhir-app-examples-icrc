@@ -17,7 +17,7 @@ package com.google.fhir.examples.demo.data
 
 import android.content.Context
 import androidx.work.WorkerParameters
-import com.auth0.android.jwt.JWT
+import com.google.android.fhir.FhirEngineProvider
 import com.google.android.fhir.sync.AcceptLocalConflictResolver
 import com.google.android.fhir.sync.DownloadWorkManager
 import com.google.android.fhir.sync.FhirSyncWorker
@@ -32,8 +32,9 @@ class FhirSyncWorker(appContext: Context, workerParams: WorkerParameters) :
     val loginRepository = LoginRepository.getInstance(applicationContext)
     val accessToken = loginRepository.getAccessToken()
 //    val patientListId = JWT(accessToken).getClaim("patient_list").asString()
-    return DownloadWorkManagerImpl()
+    return TimestampBasedDownloadWorkManagerImpl(FhirApplication.dataStore(applicationContext))
   }
+
 
   override fun getUploadStrategy(): UploadStrategy = UploadStrategy.AllChangesSquashedBundlePut
 

@@ -15,10 +15,10 @@
  */
 package com.google.fhir.examples.demo.data
 
-import android.net.Uri
-import com.google.android.fhir.SyncDownloadContext
 import com.google.android.fhir.sync.DownloadWorkManager
-import java.util.LinkedList
+import com.google.android.fhir.sync.SyncDataParams
+import com.google.android.fhir.sync.download.DownloadRequest
+import com.google.fhir.examples.demo.DemoDataStore
 import org.hl7.fhir.exceptions.FHIRException
 import org.hl7.fhir.r4.model.Bundle
 import org.hl7.fhir.r4.model.ListResource
@@ -26,20 +26,30 @@ import org.hl7.fhir.r4.model.OperationOutcome
 import org.hl7.fhir.r4.model.Reference
 import org.hl7.fhir.r4.model.Resource
 import org.hl7.fhir.r4.model.ResourceType
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.*
 
-class DownloadWorkManagerImpl() : DownloadWorkManager {
+class TimestampBasedDownloadWorkManagerImpl(private val dataStore: DemoDataStore) : DownloadWorkManager {
   private val resourceTypeList = ResourceType.values().map { it.name }
   private val urls = LinkedList(listOf("Patient?address-city=GENEVA&_sort=_lastUpdated"))
 
-  override suspend fun getNextRequestUrl(context: SyncDownloadContext): String? {
+  override suspend fun getNextRequest(): DownloadRequest? {
     var url = urls.poll() ?: return null
 
     val resourceTypeToDownload =
       ResourceType.fromCode(url.findAnyOf(resourceTypeList, ignoreCase = true)!!.second)
-    context.getLatestTimestampFor(resourceTypeToDownload)?.let {
-      url = affixLastUpdatedTimestamp(url!!, it)
+    dataStore.getLasUpdateTimestamp(resourceTypeToDownload)?.let {
+      url = affixLastUpdatedTimestamp(url, it)
     }
-    return url
+    return DownloadRequest.of(url)
+  }
+
+  override suspend fun getSummaryRequestUrls(): Map<ResourceType, String> {
+    return urls.associate {
+      ResourceType.fromCode(it.substringBefore("?")) to
+        it.plus("&${SyncDataParams.SUMMARY_KEY}=${SyncDataParams.SUMMARY_COUNT_VALUE}")
+    }
   }
 
   override suspend fun processResponse(response: Resource): Collection<Resource> {
@@ -66,10 +76,8 @@ class DownloadWorkManagerImpl() : DownloadWorkManager {
     // If the resource returned is a Bundle, check to see if there is a "next" relation referenced
     // in the Bundle.link component, if so, append the URL referenced to list of URLs to download.
     if (response is Bundle) {
-      var nextUrl = response.link.firstOrNull { component -> component.relation == "next" }?.url
+      val nextUrl = response.link.firstOrNull { component -> component.relation == "next" }?.url
       if (nextUrl != null) {
-//        UGly Hack do here....
-        nextUrl=nextUrl.replace(":8080:8080",":8080")
         urls.add(nextUrl)
       }
     }
@@ -77,9 +85,26 @@ class DownloadWorkManagerImpl() : DownloadWorkManager {
     // Finally, extract the downloaded resources from the bundle.
     var bundleCollection: Collection<Resource> = mutableListOf()
     if (response is Bundle && response.type == Bundle.BundleType.SEARCHSET) {
-      bundleCollection = response.entry.map { it.resource }
+      bundleCollection =
+        response.entry
+          .map { it.resource }
+          .also { extractAndSaveLastUpdateTimestampToFetchFutureUpdates(it) }
     }
     return bundleCollection
+  }
+
+  private suspend fun extractAndSaveLastUpdateTimestampToFetchFutureUpdates(
+    resources: List<Resource>,
+  ) {
+    resources
+      .groupBy { it.resourceType }
+      .entries
+      .map { map ->
+        dataStore.saveLastUpdatedTimestamp(
+          map.key,
+          map.value.maxOfOrNull { it.meta.lastUpdated }?.toTimeZoneString() ?: "",
+        )
+      }
   }
 }
 
@@ -102,9 +127,7 @@ private fun affixLastUpdatedTimestamp(url: String, lastUpdated: String): String 
   // Affix lastUpdate to non-$everything queries as per:
   // https://hl7.org/fhir/operation-patient-everything.html
   if (!downloadUrl.contains("\$everything")) {
-    downloadUrl =
-      Uri.parse(downloadUrl).query?.let { "$it&_lastUpdated=gt$lastUpdated" }
-        ?: "$downloadUrl?_lastUpdated=gt$lastUpdated"
+    downloadUrl = "$downloadUrl&_lastUpdated=gt$lastUpdated"
   }
 
   // Do not modify any URL set by a server that specifies the token of the page to return.
@@ -113,4 +136,11 @@ private fun affixLastUpdatedTimestamp(url: String, lastUpdated: String): String 
   }
 
   return downloadUrl
+}
+
+private fun Date.toTimeZoneString(): String {
+  val simpleDateFormat =
+    DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault())
+      .withZone(ZoneId.systemDefault())
+  return simpleDateFormat.format(this.toInstant())
 }

@@ -29,7 +29,7 @@ class ObservationItemViewHolder(private val binding: ObservationListItemBinding)
         R.string.observation_brief_text,
         observationItem.code,
         observationItem.value,
-        observationItem.effective
+        observationItem.effective,
       )
   }
 }
