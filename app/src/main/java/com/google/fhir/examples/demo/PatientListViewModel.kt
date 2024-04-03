@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import org.hl7.fhir.r4.model.Patient
 import org.hl7.fhir.r4.model.RiskAssessment
 import timber.log.Timber
+import java.time.ZoneId
 import java.time.ZoneOffset
 
 /**
@@ -184,10 +185,15 @@ internal fun Patient.toPatientItem(position: Int): PatientListViewModel.PatientI
   val gender = if (hasGenderElement()) genderElement.valueAsString else ""
   val dob =
     if (hasBirthDateElement()) {
-      LocalDate.parse(birthDateElement.valueAsString, DateTimeFormatter.ISO_DATE)
-    } else {
-      null
-    }
+      try {
+        birthDateElement.value.toInstant()
+          .atOffset(ZoneOffset.UTC)
+          .toLocalDate()
+      } catch (e: Exception) {
+        Timber.e("${birthDateElement.valueAsString} can't be parsed")
+        null
+      }
+    } else null
   val phone = if (hasTelecom()) telecom[0].value else ""
   val city = if (hasAddress()) address[0].city else ""
   val country = if (hasAddress()) address[0].country else ""

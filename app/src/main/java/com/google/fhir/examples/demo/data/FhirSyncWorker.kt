@@ -29,8 +29,8 @@ class FhirSyncWorker(appContext: Context, workerParams: WorkerParameters) :
   FhirSyncWorker(appContext, workerParams) {
 
   override fun getDownloadWorkManager(): DownloadWorkManager {
-    val loginRepository = LoginRepository.getInstance(applicationContext)
-    val accessToken = loginRepository.getAccessToken()
+//    val loginRepository = LoginRepository.getInstance(applicationContext)
+//    val accessToken = loginRepository.getAccessToken()
 //    val patientListId = JWT(accessToken).getClaim("patient_list").asString()
     return TimestampBasedDownloadWorkManagerImpl(FhirApplication.dataStore(applicationContext))
   }
