@@ -25,7 +25,7 @@ The diagram below shows the different components that are involved:
 [![Setup Overview](https://github.com/google/fhir-gateway/blob/main/doc/summary.png?raw=true "Setup Overview")](https://github.com/google/fhir-gateway/blob/main/doc/summary.png?raw=true)
 
 ### What you'll need
-
+d--
 *   Java 8 or higher
 *   [Android Studio](https://developer.android.com/studio) set up with an
     [Android emulator](https://developer.android.com/studio/run/managing-avds)
@@ -40,7 +40,6 @@ The diagram below shows the different components that are involved:
     ```shell
     git clone https://github.com/google/fhir-app-examples.git
     ```
-
 2.  Open Android Studio, select **Import Project (Gradle, Eclipse ADT, etc.)**
     and choose the `fhir-app-examples` folder downloaded in the previous step.
     If this is your first time opening the project, the Gradle Build process
