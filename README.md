@@ -46,7 +46,6 @@ d--
     should start (and take some time).
 
 ## FHIR server and Data Pipes setup
-
 1.  Clone the [FHIR Data Pipes repo](https://github.com/google/fhir-data-pipes):
 
     ```shell
